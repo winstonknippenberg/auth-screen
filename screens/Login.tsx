@@ -4,16 +4,29 @@ import { NumberInputs } from '../components/NumberInputs';
 import ProgressBar from 'react-native-progress/Bar';
 import { VerificationCode } from '../components/VerficationCode';
 import { Dimensions } from 'react-native';
+import { ChevronLeft } from 'react-native-feather';
+import { ConfirmationButton } from '../components/ConfirmationButton';
+import { FirebaseRecaptchaVerifierModal } from 'expo-firebase-recaptcha';
+import {
+  ConfirmationResult,
+  getAuth,
+  signInWithPhoneNumber,
+} from 'firebase/auth';
+import { firebaseConfig } from '../config/firebaseConfig';
+import { initializeApp } from 'firebase/app';
+
+const app = initializeApp(firebaseConfig);
 const screen = Dimensions.get('screen');
 const screenWidth = screen.width;
 const screenHeight = screen.height;
-import { ChevronLeft } from 'react-native-feather';
-import { ConfirmationButton } from '../components/ConfirmationButton';
 
 export const Login = () => {
+  const recaptchaVerifier = React.useRef(null);
+  const [fbConfirmation, setFBConfirmation] =
+    React.useState<ConfirmationResult>();
   const [areaCode, changeAreaCode] = React.useState('+972');
   const [number, onChangeNumber] = React.useState('');
-  const [verificatinCode, setVerificationCode] = React.useState('');
+  const [verificationCode, setVerificationCode] = React.useState('');
   const [modalVisible, setModalVisible] = React.useState(true);
 
   const getEditedNumber = (areaCode: string, number: string) => {
@@ -24,8 +37,35 @@ export const Login = () => {
       return `${areaCode}${cleanNumber}`;
     }
   };
-
   const phoneNumber = getEditedNumber(areaCode, number);
+  const auth = getAuth();
+
+  const handlePhoneAuth = async () => {
+    try {
+      const confirmationResult = await signInWithPhoneNumber(
+        auth,
+        phoneNumber,
+        recaptchaVerifier.current!
+      );
+
+      setFBConfirmation(confirmationResult);
+      setModalVisible(true);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const handleConfirmation = async () => {
+    try {
+      console.log({ verificationCode });
+      const result = await fbConfirmation!.confirm(verificationCode);
+      console.log(`success: ${result.user.phoneNumber}`);
+      //TODO navigation
+    } catch (error) {
+      console.log(error);
+      setModalVisible(false);
+    }
+  };
 
   return (
     <>
@@ -41,6 +81,10 @@ export const Login = () => {
       <View
         style={modalVisible ? styles.darkendScreen : styles.screenContainer}
       >
+        <FirebaseRecaptchaVerifierModal
+          ref={recaptchaVerifier}
+          firebaseConfig={firebaseConfig}
+        />
         {!modalVisible && (
           <>
             <View style={styles.logoContainer}>
@@ -58,10 +102,7 @@ export const Login = () => {
               numberState={[number, onChangeNumber]}
               areaCodeState={[areaCode, changeAreaCode]}
             />
-            <Pressable
-              onPress={() => setModalVisible(true)}
-              style={styles.sendMeBottun}
-            >
+            <Pressable onPress={handlePhoneAuth} style={styles.sendMeBottun}>
               <Text style={styles.sendMeText}>שלח לי קוד אימות</Text>
             </Pressable>
           </>
@@ -88,7 +129,7 @@ export const Login = () => {
               </Text>
               <Text style={styles.modalSecondText}>קוד אבטחה</Text>
               <VerificationCode
-                codeState={[verificatinCode, setVerificationCode]}
+                codeState={[verificationCode, setVerificationCode]}
               />
               <View style={styles.modalButtonsView}>
                 <Pressable style={styles.notMyNumber}>
@@ -100,7 +141,7 @@ export const Login = () => {
                     לא הטלפון שלי
                   </Text>
                 </Pressable>
-                <ConfirmationButton />
+                <ConfirmationButton handleConfirmation={handleConfirmation} />
               </View>
             </View>
           </View>
@@ -160,7 +201,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#eff4fa',
     borderRadius: 10,
-    // alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,

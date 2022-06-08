@@ -2,7 +2,13 @@ import React from 'react';
 import { Text, StyleSheet, View, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
-export const ConfirmationButton = () => {
+interface ConfirmationButtonProps {
+  handleConfirmation: () => void;
+}
+
+export const ConfirmationButton = ({
+  handleConfirmation,
+}: ConfirmationButtonProps) => {
   return (
     <View>
       {/* @ts-ignore */}
@@ -11,7 +17,9 @@ export const ConfirmationButton = () => {
         colors={['#369aff', '#1b81e9']}
         style={styles.button}
       >
-        <Text style={styles.buttonText}>אישור</Text>
+        <Pressable onPress={handleConfirmation}>
+          <Text style={styles.buttonText}>אישור</Text>
+        </Pressable>
       </LinearGradient>
     </View>
   );
