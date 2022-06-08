@@ -1,42 +1,51 @@
-import React from 'react';
-import { StyleSheet, Text, View, Image, Pressable, Modal } from 'react-native';
-import { NumberInputs } from '../components/NumberInputs';
-import ProgressBar from 'react-native-progress/Bar';
-import { VerificationCode } from '../components/VerficationCode';
-import { Dimensions } from 'react-native';
+import React, { useRef, useState } from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  Image,
+  Pressable,
+  Modal,
+  Dimensions,
+} from 'react-native';
 import { ChevronLeft } from 'react-native-feather';
-import { ConfirmationButton } from '../components/ConfirmationButton';
+import ProgressBar from 'react-native-progress/Bar';
 import { FirebaseRecaptchaVerifierModal } from 'expo-firebase-recaptcha';
 import {
   ConfirmationResult,
   getAuth,
   signInWithPhoneNumber,
 } from 'firebase/auth';
-import { firebaseConfig } from '../config/firebaseConfig';
 import { initializeApp } from 'firebase/app';
 
-const app = initializeApp(firebaseConfig);
+import { firebaseConfig } from '../config/firebaseConfig';
+import { NumberInputs } from '../components/NumberInputs';
+import { VerificationCode } from '../components/VerficationCode';
+import { ConfirmationButton } from '../components/ConfirmationButton';
+
+initializeApp(firebaseConfig);
+
 const screen = Dimensions.get('screen');
 const screenWidth = screen.width;
 const screenHeight = screen.height;
 
-export const Login = () => {
-  const recaptchaVerifier = React.useRef(null);
-  const [fbConfirmation, setFBConfirmation] =
-    React.useState<ConfirmationResult>();
-  const [areaCode, changeAreaCode] = React.useState('+972');
-  const [number, onChangeNumber] = React.useState('');
-  const [verificationCode, setVerificationCode] = React.useState('');
-  const [modalVisible, setModalVisible] = React.useState(true);
+const getEditedNumber = (areaCode: string, number: string) => {
+  const cleanNumber = number.replace(/\D/g, '');
+  if (cleanNumber.charAt(0) === '0') {
+    return `${areaCode}${cleanNumber.substring(1)}`;
+  } else {
+    return `${areaCode}${cleanNumber}`;
+  }
+};
 
-  const getEditedNumber = (areaCode: string, number: string) => {
-    const cleanNumber = number.replace(/\D/g, '');
-    if (cleanNumber.charAt(0) === '0') {
-      return `${areaCode}${cleanNumber.substring(1)}`;
-    } else {
-      return `${areaCode}${cleanNumber}`;
-    }
-  };
+export const Login = ({ navigation }: any) => {
+  const recaptchaVerifier = useRef(null);
+  const [fbConfirmation, setFBConfirmation] = useState<ConfirmationResult>();
+  const [areaCode, changeAreaCode] = useState('+972');
+  const [number, onChangeNumber] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [modalVisible, setModalVisible] = useState(false);
+
   const phoneNumber = getEditedNumber(areaCode, number);
   const auth = getAuth();
 
@@ -47,7 +56,6 @@ export const Login = () => {
         phoneNumber,
         recaptchaVerifier.current!
       );
-
       setFBConfirmation(confirmationResult);
       setModalVisible(true);
     } catch (err) {
@@ -57,10 +65,8 @@ export const Login = () => {
 
   const handleConfirmation = async () => {
     try {
-      console.log({ verificationCode });
       const result = await fbConfirmation!.confirm(verificationCode);
-      console.log(`success: ${result.user.phoneNumber}`);
-      //TODO navigation
+      result && navigation.push('Welcome');
     } catch (error) {
       console.log(error);
       setModalVisible(false);
@@ -131,11 +137,11 @@ export const Login = () => {
               <VerificationCode
                 codeState={[verificationCode, setVerificationCode]}
               />
-              <View style={styles.modalButtonsView}>
+              <View>
                 <Pressable style={styles.notMyNumber}>
                   <ChevronLeft stroke={'#2f8cea'} />
                   <Text
-                    style={styles.textStyle}
+                    style={styles.notMyNumberText}
                     onPress={() => setModalVisible(false)}
                   >
                     לא הטלפון שלי
@@ -161,7 +167,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   text: {
-    fontFamily: '',
     marginRight: 35,
     marginLeft: 35,
     fontSize: 18,
@@ -190,9 +195,6 @@ const styles = StyleSheet.create({
   logoContainer: {
     alignItems: 'center',
   },
-  submit: {
-    backgroundColor: '#F7F7F7',
-  },
   centeredView: {
     flex: 1,
   },
@@ -210,17 +212,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
   },
-  button: {
-    borderRadius: 20,
-    padding: 10,
-    elevation: 2,
-  },
-  buttonOpen: {
-    backgroundColor: '#F194FF',
-  },
-  buttonClose: {
-    backgroundColor: '#2196F3',
-  },
   modalText: {
     margin: 40,
     marginBottom: 15,
@@ -236,11 +227,10 @@ const styles = StyleSheet.create({
     paddingLeft: 15,
     marginTop: 15,
   },
-  textStyle: {
+  notMyNumberText: {
     color: '#2f8cea',
     fontWeight: 'bold',
     textAlign: 'left',
     fontSize: 15,
   },
-  modalButtonsView: {},
 });

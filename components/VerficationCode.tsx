@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Text, StyleSheet, View } from 'react-native';
 import {
   CodeField,
@@ -6,10 +6,6 @@ import {
   useBlurOnFulfill,
   useClearByFocusCell,
 } from 'react-native-confirmation-code-field';
-import { Dimensions } from 'react-native';
-const screen = Dimensions.get('screen');
-const screenWidth = screen.width;
-const screenHeight = screen.height;
 
 interface VerificationCodeProps {
   codeState: [string, React.Dispatch<React.SetStateAction<string>>];
@@ -24,6 +20,9 @@ export const VerificationCode = (props: VerificationCodeProps) => {
     value,
     setValue,
   });
+  useEffect(() => {
+    setValue('');
+  }, []);
 
   return (
     <View style={styles.root}>
@@ -68,6 +67,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   focusCell: {
-    borderColor: '#000',
+    borderColor: '#369aff',
   },
 });

@@ -42,10 +42,10 @@ export const NumberInputs = ({
         <Text style={styles.label}>מספר</Text>
         <TextInput
           style={styles.input}
-          onChangeText={onChangeNumber} // onChangeNumber(value)
+          onChangeText={onChangeNumber}
           value={number}
           placeholder="מספר טלפון"
-          keyboardType="numeric"
+          keyboardType="number-pad"
           focusable
         />
       </View>
